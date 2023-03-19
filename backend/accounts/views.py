@@ -77,7 +77,10 @@ def login(request):
  
 def logout(request):
     if request.method == "POST":
-        return JsonResponse({"message":"인덱스페이지"})
+        request.session.get('user')
+        print(request)
+        del(request.session['user'])
+    return JsonResponse({"message":"인덱스페이지"})
     
         
     
