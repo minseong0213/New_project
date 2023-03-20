@@ -76,12 +76,12 @@ def login(request):
                     return JsonResponse ({"message":'비밀번호 틀림'})
  
 def logout(request):
-    if request.method == "POST":
-        request.session.get('user')
-        print(request)
+    if request.method == "GET":
+        if request.session.get('user') == None:
+            return JsonResponse({"message":"로그인 안되어있다"})
+        
         del(request.session['user'])
-    return JsonResponse({"message":"인덱스페이지"})
-    
+        return JsonResponse({"message":"성공적인 로그아웃"})
         
     
 
