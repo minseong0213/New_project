@@ -1,24 +1,18 @@
 import json
-from django.shortcuts import render
-from django.http import HttpResponse,JsonResponse
+# from django.shortcuts import render
+from django.http import JsonResponse
 from django.contrib.auth.hashers import make_password, check_password
 from django.views.decorators.csrf import csrf_exempt
 from django.utils.decorators import method_decorator
-from django.views import View
+# from django.views import View
 
 from .models import User
 
 # Create your views here.
-def home(request):
-    if request.method == 'GET':
-        return JsonResponse({ "message": "Hello!" })
 
 @method_decorator(csrf_exempt, name= 'dispatch')
 def register(request):
-    if request.method == 'GET':
-        return JsonResponse({'message': "회원가입 완료"}, status=200)
-
-    elif request.method == 'POST':
+    if request.method == 'POST':
         params = json.loads(request.body)
         username = params.get('username')
         useremail = params.get('useremail') 
@@ -28,13 +22,13 @@ def register(request):
         res_data={}
 
         if password!=re_password:
-            return JsonResponse({"message":"비밀번호 다름"})
+            return JsonResponse({"message":"비밀번호가 다릅니다."},status=400)
         
         try:
             user = User.objects.get(useremail=useremail)
             if user:
                 res_data['status'] = '0' # 기존 가입된 회원 
-                return JsonResponse({"message":"가입된 회원입니다."})
+                return JsonResponse({"message":"가입된 회원입니다."},status=200)
         except User.DoesNotExist:
             user = User(
                 username = username,
@@ -46,44 +40,67 @@ def register(request):
             user = User.objects.get(useremail=useremail)
             request.session['user'] = user.id
             res_data['data'] = '1'#회원가입완료 
-            res_data['message'] = '회원가입완료'
-            return JsonResponse(res_data)
+            res_data['message'] = '회원가입이 완료되었습니다.'
+            return JsonResponse(res_data,status=200)
         
 
-def login(request):
-        if request.method == "GET":
-            return JsonResponse({"message":'로그인페이지'})
-        
-        elif request.method == "POST":
+def login(request):        
+        if request.method == "POST":
             params = json.loads(request.body)
             username = params.get('username')
             password = params.get('password')
 
-            #유효성 처리
-
-            res_data= {}
             if not (username and password):
-                return JsonResponse({"message":"모든칸을 입력해주세요"})
+                return JsonResponse({"message":"유저이름과 비밀번호를 입력해주세요."},status=200)
             
             else:
                 #기존 DB에 있는 유저 모델 가져옴
                 user = User.objects.get(username = username) 
                 if check_password(password, user.password):
                     request.session['user'] = user.id
-                    return JsonResponse({"message":'유저맞음'})
+                    return JsonResponse({"message":'유저가 맞습니다.'},status=200)
                 
                 else:
-                    return JsonResponse ({"message":'비밀번호 틀림'})
+                    return JsonResponse ({"message":'비밀번호가 틀립니다.'},status=400)
  
 def logout(request):
     if request.method == "GET":
         if request.session.get('user') == None:
-            return JsonResponse({"message":"로그인 안되어있다"})
+            return JsonResponse({"message":"로그인이 안되었습니다."},status=400)
         
         del(request.session['user'])
-        return JsonResponse({"message":"성공적인 로그아웃"})
-        
+        return JsonResponse({"message":"로그아웃이 되었습니다."},status=200)
     
+def findpassword(request):
+    if request.method == "POST":
+        params = json.loads(request.body)
+        username = params.get('username')
+        password = User.objects.get(username=username).password
+        return JsonResponse({"message" : "비밀번호를 찾았습니다.", "password": password},status=200)
+    
+
+def changepassword(request):
+    if request.method == "POST":
+        params = json.loads(request.body)
+        username = params.get("username")
+        password = params.get("password")
+        user = User.objects.get(username = username)
+
+        if check_password(password, user.password): #지금 내 패스워드가 맞는지 확인
+            new_password = params.get('new_password')
+            password_confirm = params.get('re_password')
+
+            if check_password(new_password, user.password): #지금 내 패스워드와 변경할 패스워드가 같은지 확인
+                return JsonResponse({"message": "현재 비밀번호와 동일합니다."},status=200)
+
+            if new_password == password_confirm:
+                user.password = make_password(new_password)
+                user.save()
+                return JsonResponse({"message": "비밀번호가 변경되었습니다."},status=200)
+            else:
+                return JsonResponse({"message": "변경하실 비밀번호가 일치하지 않습니다."},status=400)
+        else:
+            return JsonResponse({"message": "현재 비밀번호가 틀립니다."} ,status=400)
 
 
 
