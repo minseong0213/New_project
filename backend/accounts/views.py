@@ -103,5 +103,9 @@ def changepassword(request):
             return JsonResponse({"message": "현재 비밀번호가 틀립니다."} ,status=400)
 
 
-
-
+def findid(request):
+    if request.method == "POST":
+        params = json.loads(request.body)
+        useremail = params.get('useremail') 
+        username = User.objects.get(useremail=useremail).username
+        return JsonResponse({"message" : "유저아이디를 찾았습니다.", "username": username},status=200)
