@@ -1,11 +1,8 @@
 import json
-# from django.shortcuts import render
 from django.http import JsonResponse
 from django.contrib.auth.hashers import make_password, check_password
 from django.views.decorators.csrf import csrf_exempt
 from django.utils.decorators import method_decorator
-# from django.views import View
-
 from .models import User
 
 # Create your views here.
@@ -40,8 +37,8 @@ def register(request):
             user = User.objects.get(useremail=useremail)
             request.session['user'] = user.id
             res_data['data'] = '1'#회원가입완료 
-            res_data['message'] = '회원가입이 완료되었습니다.'
-            return JsonResponse(res_data,status=200)
+            res_data['message'] = '회원가입 완료'
+            return JsonResponse({"message" : res_data},status = 200)
         
 
 def login(request):        
